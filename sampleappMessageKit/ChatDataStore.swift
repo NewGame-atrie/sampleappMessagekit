@@ -14,6 +14,7 @@ class ChatDataStore {
     var username : String = "name"
     var senderId : String = "sender_id"
     
+    //メッセージの読み込み
     func readChat(_ chatViewControler : ChatViewController ){
         print("readChatが呼ばれた")
         
@@ -60,6 +61,7 @@ class ChatDataStore {
         
     }
     
+    //メッセージの送信
     //textは内容の呼び出し
     func send(text:String){
         

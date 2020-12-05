@@ -14,6 +14,7 @@ class ChatViewController: MessagesViewController{
     var messageList: [MessageData] = []
     
     let store : ChatDataStore = ChatDataStore()
+    var reloading: Bool = false
     
     lazy var formatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -24,20 +25,6 @@ class ChatViewController: MessagesViewController{
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-        
-        //Dummy
-        //self.loadMessagesFromFirebase()
-        /*
-        DispatchQueue.main.async {
-            // messageListにメッセージの配列をいれて
-            self.messageList = self.getMessages()
-            // messagesCollectionViewをリロードして
-            self.messagesCollectionView.reloadData()
-            // 一番下までスクロールする
-            self.messagesCollectionView.scrollToBottom()
-        }
-         */
-        
         messagesCollectionView.messagesDataSource = self
         messagesCollectionView.messagesLayoutDelegate = self
         messagesCollectionView.messagesDisplayDelegate = self
@@ -99,41 +86,31 @@ extension ChatViewController: MessagesDataSource{
         return messageList[indexPath.section]
     }
     
-
-    
     // メッセージの上に文字を表示
-       func cellTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
-//           if indexPath.section % 3 == 0 {
-//               return NSAttributedString(
-//                      string: MessageKitDateFormatter.shared.string(from: message.sentDate),
-//                      attributes: [
-//                            NSAttributedString.Key.font: UIFont.boldSystemFont(ofSize: 10),
-//                            NSAttributedString.Key.foregroundColor: UIColor.darkGray
-//                          ])
-//           }
+    func cellTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
            return nil
+    }
+
+    // メッセージの上に文字を表示（名前）
+    func messageTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
+        let name = message.sender.displayName
+        
+        return NSAttributedString(
+            string: name,
+            attributes: [
+                NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .caption1)
+            ])
        }
 
-       // メッセージの上に文字を表示（名前）
-       func messageTopLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
-            let name = message.sender.displayName
+    // メッセージの下に文字を表示（日付）
+    func messageBottomLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
+        let dateString = formatter.string(from: message.sentDate)
         
-            return NSAttributedString(
-                string: name,
-                attributes: [
-                    NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .caption1)
-                ])
-       }
-
-       // メッセージの下に文字を表示（日付）
-       func messageBottomLabelAttributedText(for message: MessageType, at indexPath: IndexPath) -> NSAttributedString? {
-            let dateString = formatter.string(from: message.sentDate)
-        
-            return NSAttributedString(
-                string: dateString,
-                attributes: [
-                    NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .caption2)
-                ])
+        return NSAttributedString(
+            string: dateString,
+            attributes: [
+                NSAttributedString.Key.font: UIFont.preferredFont(forTextStyle: .caption2)
+            ])
        }
     
 }
@@ -195,39 +172,47 @@ extension ChatViewController: InputBarAccessoryViewDelegate {
     // メッセージ送信ボタンをタップした時の挙動
     func inputBar(_ inputBar: InputBarAccessoryView, didPressSendButtonWith text: String){
         
-        
         store.send(text: text)
         
-        
         let attributedText = NSAttributedString(
-                    string: text,
-                    attributes: [
-                        .font: UIFont.systemFont(ofSize: 15),
-                        .foregroundColor: UIColor.white
-                    ]
-                )
+            string: text,
+            attributes: [
+                .font: UIFont.systemFont(ofSize: 15),
+                .foregroundColor: UIColor.white
+            ])
+        //自分から送信する
+        let message = MessageData(
+            kind: .attributedText(attributedText),
+            sender: currentSender(),
+            messageId: UUID().uuidString,
+            date: Date()
+        )
+
+        //データにMessageDataのデータを追加
+        messageList.append(message)
                 
-                //自分から送信する
-                let message = MessageData(
-                    kind: .attributedText(attributedText),
-                    sender: currentSender(),
-                    messageId: UUID().uuidString,
-                    date: Date()
-                )
+        //insertSectionでデータを更新
+        messagesCollectionView.insertSections([messageList.count - 1])
                 
-                //データにMessageDataのデータを追加
-                messageList.append(message)
+        //テキストを空にする
+        inputBar.inputTextView.text = nil
                 
-                //insertSectionでデータを更新
-                messagesCollectionView.insertSections([messageList.count - 1])
-                
-                //テキストを空にする
-                inputBar.inputTextView.text = nil
-                
-                //スクロール
-                messagesCollectionView.scrollToBottom()
-        
-        
+        //スクロール
+        messagesCollectionView.scrollToBottom()
+    }
+}
+
+extension ChatViewController: UITableViewDelegate{
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView){
+        let height = scrollView.frame.size.height
+        let contetYoffset = scrollView.contentOffset.y
+        let distanceFromBttom = scrollView.contentSize.height - contetYoffset
+        if distanceFromBttom < height {
+            if self.reloading {
+                store.readChat(self)
+                self.reloading = false
+            }
         }
     }
-
+}
