@@ -13,6 +13,8 @@ class ChatViewController: MessagesViewController{
     
     var messageList: [MessageData] = []
     
+    let store : ChatDataStore = ChatDataStore()
+    
     lazy var formatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .medium
@@ -25,6 +27,7 @@ class ChatViewController: MessagesViewController{
         
         //Dummy
         //self.loadMessagesFromFirebase()
+        /*
         DispatchQueue.main.async {
             // messageListにメッセージの配列をいれて
             self.messageList = self.getMessages()
@@ -33,15 +36,18 @@ class ChatViewController: MessagesViewController{
             // 一番下までスクロールする
             self.messagesCollectionView.scrollToBottom()
         }
+         */
         
         messagesCollectionView.messagesDataSource = self
         messagesCollectionView.messagesLayoutDelegate = self
         messagesCollectionView.messagesDisplayDelegate = self
         
-        messageInputBar.delegate = self
+        self.messageInputBar.delegate = self
         
         self.scrollsToBottomOnKeyboardBeginsEditing = true
         self.maintainPositionOnKeyboardFrameChanged = true
+        
+        store.readChat(self)
     }
     
     //Dummy
@@ -187,11 +193,11 @@ extension ChatViewController: MessageCellDelegate {
 
 extension ChatViewController: InputBarAccessoryViewDelegate {
     // メッセージ送信ボタンをタップした時の挙動
-    func messageInputBar(_ inputBar: InputBarAccessoryView, didPressSendButtonWith text: String) {
+    func inputBar(_ inputBar: InputBarAccessoryView, didPressSendButtonWith text: String){
         
         
-        //@tODO send data to firebase
-        //self.sendMessageToFireBase(text)
+        store.send(text: text)
+        
         
         let attributedText = NSAttributedString(
                     string: text,
@@ -220,6 +226,8 @@ extension ChatViewController: InputBarAccessoryViewDelegate {
                 
                 //スクロール
                 messagesCollectionView.scrollToBottom()
-            }
+        
+        
+        }
     }
 
