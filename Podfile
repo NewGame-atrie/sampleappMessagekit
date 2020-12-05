@@ -8,6 +8,7 @@ target 'sampleappMessageKit' do
   # Pods for sampleappMessageKit
   pod 'Firebase/Firestore'
   pod 'MessageKit'
+  pod 'Firebase/Auth'
 
   target 'sampleappMessageKitTests' do
     inherit! :search_paths
