@@ -42,12 +42,13 @@ class ChatDataStore {
                 let text : String = data["text"] as? String ?? ""
                 print("document: \(name) \(senderId) \(text)")
                 
-                let senderFromMe = (senderId == "sender_id")
+                let senderFromMe = (senderId == self.senderId)
                 let message = chatViewControler.createMessage(text: text, senderFromMe)
                 messageList.append(message)
             }
             
             DispatchQueue.main.async {
+                chatViewControler.reloading = false
                 // messageListにメッセージの配列をいれて
                 chatViewControler.messageList = messageList
                 // messagesCollectionViewをリロードして

@@ -11,11 +11,33 @@ import Firebase
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-
+    var uuid : String?
+    
+    static var shared : AppDelegate? {
+        get {
+            return UIApplication.shared.delegate as? AppDelegate
+        }
+    }
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
         FirebaseApp.configure()
+        
+        //
+        let idfv : String = UIDevice.current.identifierForVendor?.uuidString ?? ""
+        print("idfv=\(idfv)")
+        
+        //uuid
+        let defaults = UserDefaults.standard
+        var savedUuid : String? = defaults.string(forKey: "uuid")
+        if savedUuid == nil {
+            let uuid = UUID().uuidString
+            defaults.setValue(uuid, forKey: "uuid")
+            savedUuid = uuid
+        }
+        self.uuid = savedUuid
+        
+        
         return true
     }
 

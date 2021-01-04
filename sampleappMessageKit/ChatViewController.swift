@@ -9,7 +9,7 @@ import UIKit
 import MessageKit
 import InputBarAccessoryView
 
-class ChatViewController: MessagesViewController{
+class ChatViewController: MessagesViewController {
     
     var messageList: [MessageData] = []
     
@@ -34,7 +34,40 @@ class ChatViewController: MessagesViewController{
         self.scrollsToBottomOnKeyboardBeginsEditing = true
         self.maintainPositionOnKeyboardFrameChanged = true
         
+        //ボタン追加
+        let items = [
+            makeButton(named: "plus").onTextViewDidChange { button, textView in
+            button.tintColor = UIColor.lightGray
+            button.isEnabled = textView.text.isEmpty
+        }]
+            items.forEach { $0.tintColor = .lightGray }
+            messageInputBar.setStackViewItems(items, forStack: .left, animated: false)
+            messageInputBar.setLeftStackViewWidthConstant(to: 45, animated: false)
+        
+        //
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        store.senderId = appDelegate.uuid ?? "sender_id"
+        
+        //shared
+        store.senderId = AppDelegate.shared?.uuid ?? "sender_id"
+        
+        //
         store.readChat(self)
+    }
+    
+    func makeButton(named: String) -> InputBarButtonItem {
+        return InputBarButtonItem()
+            .configure {
+                $0.spacing = .fixed(10)
+                $0.image = UIImage(named: named)?.withRenderingMode(.alwaysTemplate)
+                $0.setSize(CGSize(width: 30, height: 30), animated: true)
+            }.onSelected {
+                $0.tintColor = UIColor.black
+            }.onDeselected {
+                $0.tintColor = UIColor.lightGray
+            }.onTouchUpInside { _ in
+                print("Item Tapped")
+            }
     }
     
     //Dummy
@@ -69,7 +102,7 @@ extension ChatViewController: MessagesDataSource{
     //自分のID
     //Dummy
     func currentSender() -> SenderType {
-        return Sender(senderId: "123", displayName: "Me")
+        return Sender(senderId: self.store.senderId, displayName: "Me")
     }
     
     //相手のID
@@ -202,16 +235,17 @@ extension ChatViewController: InputBarAccessoryViewDelegate {
     }
 }
 
-extension ChatViewController: UITableViewDelegate{
-
+extension ChatViewController {
+    
     func scrollViewDidScroll(_ scrollView: UIScrollView){
         let height = scrollView.frame.size.height
         let contetYoffset = scrollView.contentOffset.y
         let distanceFromBttom = scrollView.contentSize.height - contetYoffset
+        print("\(distanceFromBttom) \(height)")
         if distanceFromBttom < height {
-            if self.reloading {
+            if false == self.reloading {
+                self.reloading = true
                 store.readChat(self)
-                self.reloading = false
             }
         }
     }
